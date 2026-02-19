@@ -118,12 +118,21 @@ def config_cache(options, system):
         # Provide a clock for the L2 and the L1-to-L2 bus here as they
         # are not connected using addTwoLevelCacheHierarchy. Use the
         # same clock as the CPUs.
-        system.l2 = l2_cache_class(clk_domain=system.cpu_clk_domain,
-                                   **_get_cache_opts('l2', options))
 
-        system.tol2bus = L2XBar(clk_domain = system.cpu_clk_domain)
-        system.l2.cpu_side = system.tol2bus.mem_side_ports
-        system.l2.mem_side = system.membus.cpu_side_ports
+        # Hi L3 :3
+        system.l3 = L3Cache(clk_domain=system.cpu_clk_domain,
+                                   **_get_cache_opts('l3', options))
+        system.tol3bus = L2XBar(clk_domain = system.cpu_clk_domain)
+        system.l3.cpu_side = system.tol3bus.mem_side_ports
+        system.l3.mem_side = system.membus.cpu_side_ports
+
+        # We are removing the l2 :))))
+#        system.l2 = L2Cache(clk_domain=system.cpu_clk_domain,
+#                                   **_get_cache_opts('l2', options))
+
+#        system.tol2bus = L2XBar(clk_domain = system.cpu_clk_domain)
+#        system.l2.cpu_side = system.tol2bus.mem_side_ports
+#        system.l2.mem_side = system.membus.cpu_side_ports
 
     if options.memchecker:
         system.memchecker = MemChecker()
@@ -159,8 +168,16 @@ def config_cache(options, system):
 
             # When connecting the caches, the clock is also inherited
             # from the CPU in question
-            system.cpu[i].addPrivateSplitL1Caches(icache, dcache,
-                                                  iwalkcache, dwalkcache)
+#            system.cpu[i].addPrivateSplitL1Caches(icache, dcache,
+#                                                  iwalkcache, dwalkcache)
+            # What the heck is a walker cache?
+            l2cache = L2Cache(clk_domain=system.cpu_clk_domain,
+                                       **_get_cache_opts('l2', options))
+            # hoping and praying i dont need to make a custom xbar
+            # i dont think so??? l3 needs xbar, this func makes its own xbar,
+            # theoretically i don't need to make another ;-; right, TAs?
+            system.cpu[i].addTwoLevelCacheHierarchy(icache, dcache,
+                                       l2cache, iwalkcache, dwalkcache)
 
             if options.memchecker:
                 # The mem_side ports of the caches haven't been connected yet.
@@ -186,9 +203,11 @@ def config_cache(options, system):
                         ExternalCache("cpu%d.dcache" % i))
 
         system.cpu[i].createInterruptController()
-        if options.l2cache:
+        # chat does options.l3cache work? am i stupid?
+        # will the TAs get onto me for leaving deranged comments in the MP?
+        if options.l3cache:
             system.cpu[i].connectAllPorts(
-                system.tol2bus.cpu_side_ports,
+                system.tol3bus.cpu_side_ports,
                 system.membus.cpu_side_ports, system.membus.mem_side_ports)
         elif options.external_memory_system:
             system.cpu[i].connectUncachedPorts(

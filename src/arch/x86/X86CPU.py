@@ -23,6 +23,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+from m5.objects.BaseMinorCPU import BaseMinorCPU
+
+
 from m5.proxy import Self
 
 from m5.objects.BaseAtomicSimpleCPU import BaseAtomicSimpleCPU
@@ -60,3 +64,7 @@ class X86O3CPU(BaseO3CPU, X86CPU):
     # (it's a side effect of int reg renaming), so they should
     # never be the bottleneck here.
     numPhysCCRegs = Self.numPhysIntRegs * 5
+
+
+class X86MinorCPU(BaseMinorCPU, X86CPU):
+    mmu = X86MMU()
